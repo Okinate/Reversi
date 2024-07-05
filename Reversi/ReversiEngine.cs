@@ -64,5 +64,93 @@ namespace Reversi
             if (playerId == 1) return 2;
             return 1;
         }
+
+        // Metoda chroniona, która umieszcza pionek na planszy
+        // Jeśli parametr test jest true, metoda symuluje ruch bez faktycznego umieszczania pionka
+        protected int PutStone(int width, int height, bool test)
+        {
+            int capturedFieldsCount = 0;
+
+            // Sprawdzenie czy pole jest puste
+
+            if (gameBoard[width, height] != 0) return -1;
+
+            // Przechodzenie przez wszystkie kierunki dookoła pionka
+
+            for (int isHorizontalDirection = -1; isHorizontalDirection <= 1; isHorizontalDirection++)
+                for(int isVerticalDirection = -1; isVerticalDirection <= 1; isVerticalDirection++)
+                {
+                    if(isHorizontalDirection == 0 && isVerticalDirection == 0) continue;
+
+                    // Inicjalizacja zmiennych do sprawdzania kierunku
+
+                    bool hasReachedBoardEdge = false;
+                    bool foundEmptyField = false;
+                    bool foundPlayerStone = false;
+                    bool foundEnemyStone = false;
+                    int i = width;
+                    int j = height;
+
+                    // Przesuwanie w kierunku, aż do napotkania krawędzi planszy lub innego pionka
+
+                    do
+                    {
+                        i += isHorizontalDirection;
+                        j += isVerticalDirection;
+                        if (!isBoardCoordinateValid(i, j))
+                            hasReachedBoardEdge = true;
+
+                        if (!hasReachedBoardEdge)
+                        {
+                            if (gameBoard[i, j] == NextPlayerNumber)
+                                foundPlayerStone = true;
+                            if (gameBoard[i, j] == opponentId(NextPlayerNumber))
+                                foundEnemyStone = true;
+                            if (gameBoard[i, j] == 0)
+                                foundEmptyField = true;
+                        }
+                    }
+                    while (!(hasReachedBoardEdge || foundEmptyField || foundPlayerStone));
+
+                    // Sprawdzenie czy można umieścić pionek
+
+                    bool canPlaceStone = foundEnemyStone && foundPlayerStone != foundEmptyField;
+
+                    if (canPlaceStone)
+                    {
+                        int maxIndex = Math.Max(Math.Abs(i - width), Math.Abs(j - height));
+
+                        // Faktyczne umieszczenie pionka, jeśli test jest false
+
+                        if (!test)
+                        {
+                            for (int index = 0; index < maxIndex; index++)
+                            gameBoard[width + index * isHorizontalDirection, height + index * isVerticalDirection] = NextPlayerNumber;
+                        }   
+                        
+                        capturedFieldsCount = capturedFieldsCount + maxIndex - 1;
+                    }
+                }
+
+            // Zmiana gracza, jeśli pionek został umieszczony i to nie był test
+
+            if (capturedFieldsCount > 0 && !test)
+                changePlayer();
+
+            return capturedFieldsCount;
+        }
+
+        // Publiczna metoda do umieszczania pionka, wywołuje metodę chronioną z test = false
+
+        public bool PutStone(int width, int height)
+        {
+            return PutStone(width, height, false) > 0;
+        }
+
+        // Prywatna metoda zmieniająca gracza
+        private void changePlayer()
+        {
+            NextPlayerNumber = opponentId(NextPlayerNumber);
+        }
     }
 }
