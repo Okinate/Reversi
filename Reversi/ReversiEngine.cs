@@ -15,6 +15,11 @@ namespace Reversi
 
         private int[,] gameBoard;
 
+        private int[] fieldCount = new int[3];
+        public int freeFieldCount { get { return  fieldCount[0]; } }
+        public int fieldCountPlayer1 { get { return fieldCount[1]; } }
+        public int fieldCountPlayer2 { get { return fieldCount[2]; } }
+
         // Konstruktor inicjalizujący silnik gry Reversi
         public ReversiEngine(int startingPlayerNumber, int boardWidth, int boardHeight)
         {
@@ -25,6 +30,7 @@ namespace Reversi
             NextPlayerNumber = startingPlayerNumber;
             gameBoard = new int[BoardWidth, BoardHeight];
             clearBoard();
+            calculateFieldCounts();
         }
 
         // Metoda prywatna do wyczyszczenia planszy i ustawienia początkowych pionków
@@ -44,7 +50,7 @@ namespace Reversi
         // Metoda publiczna zwracająca stan pola na planszy o podanych współrzędnych
         public int GetBoardFieldState (int Width , int Height)
         {
-            if (isBoardCoordinateValid(Width, Height))
+            if (!isBoardCoordinateValid(Width, Height))
                 throw new Exception("Nieprawidłowe współrzędne pola");
 
             return gameBoard[Width, Height];
@@ -114,7 +120,7 @@ namespace Reversi
 
                     // Sprawdzenie czy można umieścić pionek
 
-                    bool canPlaceStone = foundEnemyStone && foundPlayerStone != foundEmptyField;
+                    bool canPlaceStone = foundEnemyStone && foundPlayerStone && !foundEmptyField;
 
                     if (canPlaceStone)
                     {
@@ -126,9 +132,11 @@ namespace Reversi
                         {
                             for (int index = 0; index < maxIndex; index++)
                             gameBoard[width + index * isHorizontalDirection, height + index * isVerticalDirection] = NextPlayerNumber;
+
+                            capturedFieldsCount = capturedFieldsCount + maxIndex - 1;
                         }   
                         
-                        capturedFieldsCount = capturedFieldsCount + maxIndex - 1;
+                        
                     }
                 }
 
@@ -137,6 +145,7 @@ namespace Reversi
             if (capturedFieldsCount > 0 && !test)
                 changePlayer();
 
+            calculateFieldCounts();
             return capturedFieldsCount;
         }
 
@@ -152,5 +161,14 @@ namespace Reversi
         {
             NextPlayerNumber = opponentId(NextPlayerNumber);
         }
+
+        private void calculateFieldCounts()
+        {
+            fieldCount[0] = fieldCount[1] = fieldCount[2] = 0;
+            for (int i = 0; i < BoardWidth; i++)
+                for (int j = 0; j < BoardHeight; j++)
+                    fieldCount[gameBoard[i, j]]++;
+        }
+
     }
 }
